@@ -10,6 +10,7 @@ import matplotlib.ticker as mtick
 import gspread
 from google.oauth2.service_account import Credentials
 import numpy as np
+import time
 
 # ================================
 # 🔹 CONFIG GLOBAL
@@ -37,7 +38,19 @@ def get_gsheet_client(scope):
 # ================================
 # 🔹 CARGA DESDE GOOGLE SHEETS
 # ================================
-@st.cache_data(ttl=60)
+# auto refresh cada 30 seg
+if "last_refresh" not in st.session_state:
+    st.session_state.last_refresh = time.time()
+
+if time.time() - st.session_state.last_refresh > 30:
+    st.session_state.last_refresh = time.time()
+    st.cache_data.clear()
+    st.rerun()
+
+
+
+
+@st.cache_data(ttl=30, show_spinner="🔄 Sincronizando datos con Google Sheets...")
 def load_data_from_gsheet(sheet_id):
     scope = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
     client = get_gsheet_client(scope)
