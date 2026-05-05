@@ -10,6 +10,8 @@ import gspread
 from google.oauth2.service_account import Credentials
 import numpy as np
 import time
+from datetime import datetime
+import pytz
 
 # ================================
 # 🔹 CONFIG GLOBAL
@@ -125,9 +127,14 @@ st.sidebar.markdown("### 🔄 Sincronización")
 
 # Mostrar última actualización
 if "last_refresh" in st.session_state:
-    st.sidebar.caption(
-        f"Última actualización: {time.strftime('%H:%M:%S', time.localtime(st.session_state.last_refresh))}"
-    )
+    zona_chile = pytz.timezone("America/Santiago")
+
+    hora_local = datetime.fromtimestamp(
+    st.session_state.last_refresh,
+    zona_chile
+    ).strftime("%H:%M:%S")
+
+st.sidebar.caption(f"Última actualización: {hora_local} 🇨🇱")
 
 # ================================
 # 🔹 CARGA DATA
