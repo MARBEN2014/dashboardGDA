@@ -9,5 +9,4 @@ folium
 openpyxl
 gspread
 google-auth
-time
 pytz
