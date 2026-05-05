@@ -3,10 +3,9 @@ import pandas as pd
 import folium
 import geopandas as gpd
 from streamlit_folium import st_folium
-from folium.plugins import HeatMap, MarkerCluster
+from folium.plugins import HeatMap
 import seaborn as sns
 import matplotlib.pyplot as plt
-import matplotlib.ticker as mtick
 import gspread
 from google.oauth2.service_account import Credentials
 import numpy as np
@@ -36,9 +35,8 @@ def get_gsheet_client(scope):
     return gspread.authorize(creds)
 
 # ================================
-# 🔹 CARGA DESDE GOOGLE SHEETS
+# 🔹 AUTO REFRESH (cada 30 seg)
 # ================================
-# auto refresh cada 30 seg
 if "last_refresh" not in st.session_state:
     st.session_state.last_refresh = time.time()
 
@@ -47,9 +45,9 @@ if time.time() - st.session_state.last_refresh > 30:
     st.cache_data.clear()
     st.rerun()
 
-
-
-
+# ================================
+# 🔹 CARGA DESDE GOOGLE SHEETS
+# ================================
 @st.cache_data(ttl=30, show_spinner="🔄 Sincronizando datos con Google Sheets...")
 def load_data_from_gsheet(sheet_id):
     scope = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
@@ -65,7 +63,7 @@ def load_data_from_gsheet(sheet_id):
 
     df = pd.DataFrame(rows, columns=headers)
 
-    # 🔥 LIMPIEZA DE DATOS
+    # 🔥 LIMPIEZA
     cols = ['venta_neta', 'lat', 'lng', 'kms_dist', 'lat_cd', 'lng_cd', 'unidades']
 
     for col in cols:
@@ -92,7 +90,6 @@ def save_to_gsheet(df, sheet_id):
     sheet = client.open_by_key(sheet_id)
     worksheet = sheet.get_worksheet(0)
 
-    # 🔥 LIMPIEZA PROFESIONAL
     df_clean = df.copy()
 
     # Fechas → string
@@ -120,7 +117,24 @@ def load_geojson():
     return geo
 
 # ================================
-# 🔹 CARGA INICIAL
+# 🔹 BOTÓN SINCRONIZACIÓN MANUAL
+# ================================
+st.sidebar.markdown("### 🔄 Sincronización")
+
+if st.sidebar.button("🔄 Sincronizar ahora"):
+    st.cache_data.clear()
+    st.session_state.last_refresh = time.time()
+    st.success("Datos actualizados desde Google Sheets")
+    st.rerun()
+
+# Mostrar última actualización
+if "last_refresh" in st.session_state:
+    st.sidebar.caption(
+        f"Última actualización: {time.strftime('%H:%M:%S', time.localtime(st.session_state.last_refresh))}"
+    )
+
+# ================================
+# 🔹 CARGA DATA
 # ================================
 try:
     df = load_data_from_gsheet(SHEET_ID)
@@ -128,13 +142,6 @@ try:
 except Exception as e:
     st.error(f"Error al cargar datos: {e}")
     st.stop()
-
-# ================================
-# 🔹 BOTÓN REFRESH CLOUD
-# ================================
-if st.sidebar.button("🔄 Actualizar datos desde la nube"):
-    st.cache_data.clear()
-    st.rerun()
 
 # ================================
 # 🔹 FILTROS
@@ -196,7 +203,6 @@ df_filtered = df[mask]
 st.title("Dashboard Grupo de Defensa")
 
 if not df_filtered.empty:
-
     total = len(df_filtered)
     venta = df_filtered['venta_neta'].sum()
 
@@ -220,11 +226,8 @@ tab1, tab2, tab3 = st.tabs([
 # ================================
 with tab1:
     m = folium.Map(location=[-33.45, -70.65], zoom_start=11)
-
     data = df_filtered[['lat', 'lng']].dropna().values.tolist()
-
     HeatMap(data).add_to(m)
-
     st_folium(m, width=1000, height=500)
 
 # ================================
@@ -245,5 +248,5 @@ with tab3:
     if st.button("💾 Guardar cambios"):
         save_to_gsheet(edited_df, SHEET_ID)
         st.cache_data.clear()
-        st.success("Guardado en la nube")
+        st.success("Guardado en Google Sheets")
         st.rerun()
