@@ -162,7 +162,11 @@ else:
     st.warning(" No hay datos para los filtros seleccionados.")
 
 
-tab1, tab2 = st.tabs([" Visualización Geoespacial", " Análisis Estadístico"])
+tab1, tab2, tab3 = st.tabs([
+    " Visualización Geoespacial",
+    " Análisis Estadístico",
+    "✏️ Gestión de Datos"
+])
 
 with tab1:
     st.subheader("Explorador Geográfico")
@@ -478,6 +482,35 @@ with tab2:
         st.pyplot(fig3)
     else:
         st.info("Utilice los filtros laterales para visualizar el análisis estadístico.")
+        
+with tab3:
+    st.subheader("✏️ Edición de Datos (CRUD básico)")
+
+    # Editor interactivo
+    edited_df = st.data_editor(
+        df,
+        use_container_width=True,
+        num_rows="dynamic"  # permite agregar/eliminar filas
+    )
+
+    # Detectar cambios
+    if not edited_df.equals(df):
+        st.warning("⚠️ Hay cambios sin guardar")
+
+    col1, col2 = st.columns(2)
+
+    # 💾 GUARDAR
+    with col1:
+        if st.button("💾 Guardar cambios"):
+            edited_df.to_excel("dataset_tarea_ind.xlsx", index=False)
+            st.cache_data.clear()
+            st.success("✅ Datos actualizados correctamente")
+            st.rerun()
+
+    # 🗑️ RESET
+    with col2:
+        if st.button("🔄 Descartar cambios"):
+            st.rerun()
 
 st.divider()
 
@@ -494,6 +527,7 @@ En términos de implementación, la integración con Streamlit destacó la impor
 
 </div>
 """, unsafe_allow_html=True)
+
 
 st.markdown("""
 **Insights Clave**
