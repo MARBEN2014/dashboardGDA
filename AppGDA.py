@@ -7,6 +7,8 @@ from folium.plugins import HeatMap, MarkerCluster
 import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
+import gspread
+from google.oauth2.service_account import Credentials
 
 def format_chile(valor):
    
@@ -167,6 +169,27 @@ tab1, tab2, tab3 = st.tabs([
     " Análisis Estadístico",
     "✏️ Gestión de Datos"
 ])
+
+
+def save_to_gsheet(df, sheet_url):
+    scope = ["https://www.googleapis.com/auth/spreadsheets"]
+
+    creds = Credentials.from_service_account_info(
+        st.secrets["gcp_service_account"],
+        scopes=scope
+    )
+
+    client = gspread.authorize(creds)
+
+    # 🔥 usamos ID limpio (más robusto)
+    sheet_id = sheet_url.split("/d/")[1].split("/")[0]
+
+    sheet = client.open_by_key(sheet_id)
+    worksheet = sheet.get_worksheet(0)
+
+    worksheet.clear()
+
+    worksheet.update([df.columns.values.tolist()] + df.values.tolist())
 
 with tab1:
     st.subheader("Explorador Geográfico")
@@ -502,15 +525,29 @@ with tab3:
     # 💾 GUARDAR
     with col1:
         if st.button("💾 Guardar cambios"):
+    
+            # 🔹 Guarda local (opcional)
             edited_df.to_excel("dataset_tarea_ind.xlsx", index=False)
+
+            # 🔹 Guarda en Google Sheets
+            save_to_gsheet(
+                edited_df,
+                "https://docs.google.com/spreadsheets/d/1OmWufDYx3kAhU0A4Ovn8HmWhvB7kBIROQaHVj97wKpU"
+            )
+
             st.cache_data.clear()
-            st.success("✅ Datos actualizados correctamente")
+            st.success("✅ Datos guardados en Google Sheets")
             st.rerun()
 
     # 🗑️ RESET
     with col2:
         if st.button("🔄 Descartar cambios"):
             st.rerun()
+            
+
+
+
+
 
 st.divider()
 
