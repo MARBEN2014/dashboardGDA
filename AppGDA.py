@@ -172,6 +172,8 @@ tab1, tab2, tab3 = st.tabs([
 
 
 def save_to_gsheet(df, sheet_id):
+    import numpy as np
+
     scope = ["https://www.googleapis.com/auth/spreadsheets"]
 
     creds = Credentials.from_service_account_info(
@@ -184,8 +186,27 @@ def save_to_gsheet(df, sheet_id):
     sheet = client.open_by_key(sheet_id)
     worksheet = sheet.get_worksheet(0)
 
+    # 🔥 --- LIMPIEZA PROFESIONAL DE DATOS ---
+    df_clean = df.copy()
+
+    # 1. Convertir fechas a string (evita error JSON)
+    for col in df_clean.select_dtypes(include=['datetime64[ns]']).columns:
+        df_clean[col] = df_clean[col].dt.strftime('%Y-%m-%d %H:%M:%S')
+
+    # 2. Reemplazar NaN / None / inf
+    df_clean = df_clean.replace([np.inf, -np.inf], np.nan)
+    df_clean = df_clean.fillna("")
+
+    # 3. Convertir tipos numpy a nativos de Python
+    df_clean = df_clean.astype(object)
+
+    # --------------------------------------
+
     worksheet.clear()
-    worksheet.update([df.columns.values.tolist()] + df.values.tolist())
+
+    worksheet.update(
+        [df_clean.columns.tolist()] + df_clean.values.tolist()
+    )
 
 with tab1:
     st.subheader("Explorador Geográfico")
