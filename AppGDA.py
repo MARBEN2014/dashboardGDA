@@ -121,11 +121,7 @@ def load_geojson():
 # ================================
 st.sidebar.markdown("### 🔄 Sincronización")
 
-if st.sidebar.button("🔄 Sincronizar ahora"):
-    st.cache_data.clear()
-    st.session_state.last_refresh = time.time()
-    st.success("Datos actualizados desde Google Sheets")
-    st.rerun()
+ 
 
 # Mostrar última actualización
 if "last_refresh" in st.session_state:
@@ -245,8 +241,20 @@ with tab2:
 with tab3:
     edited_df = st.data_editor(df, use_container_width=True)
 
-    if st.button("💾 Guardar cambios"):
-        save_to_gsheet(edited_df, SHEET_ID)
-        st.cache_data.clear()
-        st.success("Guardado en Google Sheets")
-        st.rerun()
+    col1, col2 = st.columns([2,1])
+
+    # 💾 GUARDAR
+    with col1:
+        if st.button("💾 Guardar cambios"):
+            save_to_gsheet(edited_df, SHEET_ID)
+            st.cache_data.clear()
+            st.success("Guardado en Google Sheets")
+            st.rerun()
+
+    # 🔄 SINCRONIZAR
+    with col2:
+        if st.button("🔄 Sincronizar ahora"):
+            st.cache_data.clear()
+            st.session_state.last_refresh = time.time()
+            st.success("Datos actualizados desde Google Sheets")
+            st.rerun()
