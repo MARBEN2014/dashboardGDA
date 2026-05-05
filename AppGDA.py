@@ -171,7 +171,7 @@ tab1, tab2, tab3 = st.tabs([
 ])
 
 
-def save_to_gsheet(df, sheet_url):
+def save_to_gsheet(df, sheet_id):
     scope = ["https://www.googleapis.com/auth/spreadsheets"]
 
     creds = Credentials.from_service_account_info(
@@ -181,14 +181,10 @@ def save_to_gsheet(df, sheet_url):
 
     client = gspread.authorize(creds)
 
-    # 🔥 usamos ID limpio (más robusto)
-    sheet_id = sheet_url.split("/d/")[1].split("/")[0]
-
     sheet = client.open_by_key(sheet_id)
     worksheet = sheet.get_worksheet(0)
 
     worksheet.clear()
-
     worksheet.update([df.columns.values.tolist()] + df.values.tolist())
 
 with tab1:
@@ -532,7 +528,7 @@ with tab3:
             # 🔹 Guarda en Google Sheets
             save_to_gsheet(
                 edited_df,
-                "https://docs.google.com/spreadsheets/d/1OmWufDYx3kAhU0A4Ovn8HmWhvB7kBIROQaHVj97wKpU"
+                "15GV1qqYKyUk9Ee2T3HyUEr57MCsrQTuj"
             )
 
             st.cache_data.clear()
